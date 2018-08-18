@@ -22,7 +22,8 @@ with open('train.txt', 'r') as f:
             x.append(l[0])
             y.append(l[1])
 print(x, y)
-directory = '/Users/mahaoyang/Downloads/DatasetA_train_20180813/train'
+# directory = '/Users/mahaoyang/Downloads/DatasetA_train_20180813/train'
+directory = 'D:/lyb/DatasetA_train_20180813/train'
 for imgname in os.listdir(directory):  # 参数是文件夹路径 directory
 
     print(imgname)
