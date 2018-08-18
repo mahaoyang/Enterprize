@@ -15,7 +15,7 @@ import numpy as np
 
 x = []
 y = []
-with open('train.txt', 'r') as f:
+with open('D:/lyb/DatasetA_train_20180813/train.txt', 'r') as f:
     for line in f:
         l = f.readline().strip('\n').split('\t')
         if l:
