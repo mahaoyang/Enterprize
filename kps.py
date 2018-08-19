@@ -81,8 +81,6 @@ for layer in base_model.layers:
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
 
 
-
-
 def data_generator(data, batch_size):  # 样本生成器，节省内存
     while True:
         batch = np.random.choice(data, batch_size)
@@ -108,22 +106,25 @@ def data_generator(data, batch_size):  # 样本生成器，节省内存
 
 
 # train the model on the new data for a few epochs
-model.fit_generator(data_generator(train_samples, 100), steps_per_epoch=1000, epochs=10,
-                    validation_data=data_generator(test_samples, 100), validation_steps=100)
-model.save_weights('my_model_weights.h5')
+# model.fit_generator(data_generator(train_samples, 100), steps_per_epoch=1000, epochs=10,
+#                     validation_data=data_generator(test_samples, 100), validation_steps=100)
+# model.save_weights('my_model_weights.h5')
 
+model.load_weights('my_model_weights.h5', by_name=True)
 # 评价模型的全对率
 from tqdm import tqdm
 
 total = 0.
 right = 0.
 step = 0
-for x, y in tqdm(data_generator(test_samples, 100)):
-    _ = model.predict(x)
-    _ = np.array([i.argmax(axis=1) for i in _]).T
-    y = np.array(y).T
-    total += len(x)
-    right += ((_ == y).sum(axis=1) == 4).sum()
+for xp, yp in tqdm(data_generator(test_samples, 100)):
+    _ = model.predict(xp)
+    _ = np.array([i.argmax(axis=0) for i in _]).T
+    yp = np.array(yp).T
+    total += len(xp)
+    for i in range(0, len(_)):
+        if yp[_[i]][i] == 1:
+            right += 1
     if step < 100:
         step += 1
     else:
