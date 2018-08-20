@@ -23,7 +23,8 @@ x = []
 y = dict()
 img_size = (200, 200)
 
-with open('D:/lyb/DatasetA_train_20180813/label_list.txt', 'r') as f:
+# with open('D:/lyb/DatasetA_train_20180813/label_list.txt', 'r') as f:
+with open('/Users/mahaoyang/Downloads/DatasetA_train_20180813/label_list.txt', 'r') as f:
     label_list = []
     for line in f:
         line = line.strip('\n').split('\t')
@@ -31,14 +32,15 @@ with open('D:/lyb/DatasetA_train_20180813/label_list.txt', 'r') as f:
         print(line)
     print(len(label_list))
 
-with open('D:/lyb/DatasetA_train_20180813/train.txt', 'r') as f:
+# with open('D:/lyb/DatasetA_train_20180813/train.txt', 'r') as f:
+with open('/Users/mahaoyang/Downloads/DatasetA_train_20180813/train.txt', 'r') as f:
     for line in f:
         line = line.strip('\n').split('\t')
         x.append(line[0])
         y[line[0]] = line[1]
 print(len(x), len(y))
-# directory = '/Users/mahaoyang/Downloads/DatasetA_train_20180813/train'
-directory = 'D:/lyb/DatasetA_train_20180813/train/'
+directory = '/Users/mahaoyang/Downloads/DatasetA_train_20180813/train/'
+# directory = 'D:/lyb/DatasetA_train_20180813/train/'
 # for imgname in x:  # 参数是文件夹路径 directory
 #
 #     # print(imgname)
@@ -86,11 +88,14 @@ def data_generator(data, batch_size):  # 样本生成器，节省内存
         batch = np.random.choice(data, batch_size)
         tx, ty = [], []
         for img in batch:
-            pic = Image.open(directory + img)  # .convert('L')
-            pic = misc.imresize(pic, img_size)
-            if pic.shape == (200, 200):
-                pic = cv2.cvtColor(pic.reshape(200, 200), cv2.COLOR_GRAY2BGR)
-                pic = misc.imresize(pic, img_size)
+            # pic = Image.open(directory + img)  # .convert('L')
+            # pic = misc.imresize(pic, img_size)
+            # if pic.shape == (200, 200):
+            #     pic = cv2.cvtColor(pic.reshape(200, 200), cv2.COLOR_GRAY2BGR)
+            #     pic = misc.imresize(pic, img_size)
+            pic = load_img(directory + img, target_size=(200, 200))
+            pic = img_to_array(pic)
+            pic = pic.reshape((pic.shape[0], pic.shape[1], pic.shape[2]))
             tx.append(pic)
             ty.append(y[img])
         # for i in tx:
@@ -113,21 +118,57 @@ def data_generator(data, batch_size):  # 样本生成器，节省内存
 model.load_weights('my_model_weights.h5', by_name=True)
 # 评价模型的全对率
 from tqdm import tqdm
+#
+# total = 0.
+# right = 0.
+# step = 0
+# for xp, yp in tqdm(data_generator(test_samples, 100)):
+#     _ = model.predict(xp)
+#     _ = np.array([i.argmax(axis=0) for i in _]).T
+#     yp = np.array(yp).T
+#     total += len(xp)
+#     for i in range(0, len(_)):
+#         if yp[_[i]][i] == 1:
+#             right += 1
+#     if step < 100:
+#         step += 1
+#     else:
+#         break
+#
+# print('模型全对率：%s' % (right / total))
 
-total = 0.
-right = 0.
-step = 0
-for xp, yp in tqdm(data_generator(test_samples, 100)):
-    _ = model.predict(xp)
-    _ = np.array([i.argmax(axis=0) for i in _]).T
-    yp = np.array(yp).T
-    total += len(xp)
-    for i in range(0, len(_)):
-        if yp[_[i]][i] == 1:
-            right += 1
-    if step < 100:
-        step += 1
-    else:
+
+def submit_data_generator(data, path_t):
+    while True:
+        tx, ty = [], []
+        for img in data:
+            # pic = Image.open(directory + img)  # .convert('L')
+            # pic = misc.imresize(pic, img_size)
+            # if pic.shape == (200, 200):
+            #     pic = cv2.cvtColor(pic.reshape(200, 200), cv2.COLOR_GRAY2BGR)
+            #     pic = misc.imresize(pic, img_size)
+            pic = load_img(path_t + img, target_size=(200, 200))
+            pic = img_to_array(pic)
+            pic = pic.reshape((pic.shape[0], pic.shape[1], pic.shape[2]))
+            tx.append(pic)
+            # print(img)
+
+        tx = preprocess_input(np.array(tx).astype(float))
+        yield tx, ty
+
+
+sub_x = list()
+with open('/Users/mahaoyang/Downloads/DatasetA_test_20180813/DatasetA_test/image.txt', 'r') as f:
+    for line in f:
+        line = line.strip('\n')
+        sub_x.append(line)
+sub_y = list()
+for ix in sub_x:
+    for xp, yp in tqdm(
+            submit_data_generator([ix], '/Users/mahaoyang/Downloads/DatasetA_test_20180813/DatasetA_test/test/')):
+        ys = model.predict(xp)
+        ys = np.array([i.argmax(axis=0) for i in ys]).T
+
+        with open('submit.txt', 'a') as f:
+            f.write('%s\t%s\n' % (ix, label_list[ys[0]]))
         break
-
-print('模型全对率：%s' % (right / total))
