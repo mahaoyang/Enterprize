@@ -1,99 +1,83 @@
-from keras.layers import Embedding
+from keras.layers import Conv2D, MaxPooling2D, Flatten
+from keras.layers import Input, LSTM, Embedding, Dense
+from keras.models import Model, Sequential
+from keras.applications import VGG16, VGG19
+import keras
 
-from keras.applications.inception_v3 import InceptionV3
-from keras.preprocessing import image
-from keras.models import Model
-from keras.layers import Dense, GlobalAveragePooling2D
-from keras import backend as K
+# mnist attention
+import numpy as np
 
-from keras.applications.inception_v3 import InceptionV3
-from keras.layers import Input
+np.random.seed(1337)
+from keras.datasets import mnist
+from keras.utils import np_utils
+from keras.layers import *
+from keras.models import *
+from keras.optimizers import Adam
 
+TIME_STEPS = 28
+INPUT_DIM = 28
+lstm_units = 64
 
-def emb():
-    embeddings_index = {}
-    f = open(os.path.join(GLOVE_DIR,
-                          '/Users/mahaoyang/PycharmProjects/zeropic/DatasetA_train_20180813/class_wordembeddings.txt'))
-    for line in f:
-        values = line.split()
-        word = values[0]
-        coefs = np.asarray(values[1:], dtype='float32')
-        embeddings_index[word] = coefs
-    f.close()
-
-    embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
-    for word, i in word_index.items():
-        embedding_vector = embeddings_index.get(word)
-        if embedding_vector is not None:
-            # words not found in embedding index will be all-zeros.
-            embedding_matrix[i] = embedding_vector
-
-    print('Found %s word vectors.' % len(embeddings_index))
-    embedding_layer = Embedding(len(word_index) + 1,
-                                EMBEDDING_DIM,
-                                weights=[embedding_matrix],
-                                input_length=MAX_SEQUENCE_LENGTH,
-                                trainable=False)
+# data pre-processing
+(X_train, y_train), (X_test, y_test) = mnist.load_data('mnist.npz')
+X_train = X_train.reshape(-1, 28, 28) / 255.
+X_test = X_test.reshape(-1, 28, 28) / 255.
+y_train = np_utils.to_categorical(y_train, num_classes=10)
+y_test = np_utils.to_categorical(y_test, num_classes=10)
+print('X_train shape:', X_train.shape)
+print('X_test shape:', X_test.shape)
 
 
-    sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32')
-    embedded_sequences = embedding_layer(sequence_input)
+# first way attention
+def attention_3d_block(inputs):
+    # input_dim = int(inputs.shape[2])
+    a = Permute((2, 1))(inputs)
+    a = Dense(TIME_STEPS, activation='softmax')(a)
+    a_probs = Permute((2, 1), name='attention_vec')(a)
+    # output_attention_mul = merge([inputs, a_probs], name='attention_mul', mode='mul')
+    output_attention_mul = multiply([inputs, a_probs], name='attention_mul')
+    return output_attention_mul
 
 
-def fine_tune():
-    # create the base pre-trained model
-    base_model = InceptionV3(weights='imagenet', include_top=False)
+inputs = Input(shape=(TIME_STEPS, INPUT_DIM))
+drop1 = Dropout(0.3)(inputs)
+lstm_out = Bidirectional(LSTM(lstm_units, return_sequences=True), name='bilstm')(drop1)
+attention_mul = attention_3d_block(lstm_out)
+attention_flatten = Flatten()(attention_mul)
+drop2 = Dropout(0.3)(attention_flatten)
+output = Dense(10, activation='sigmoid')(drop2)
+model = Model(inputs=inputs, outputs=output)
 
-    # add a global spatial average pooling layer
-    x = base_model.output
-    x = GlobalAveragePooling2D()(x)
-    # let's add a fully-connected layer
-    x = Dense(1024, activation='relu')(x)
-    # and a logistic layer -- let's say we have 200 classes
-    predictions = Dense(200, activation='softmax')(x)
+# First, let's define a vision model using a Sequential model.
+# This model will encode an image into a vector.
+vision_model = VGG19(include_top=False, weights=None, input_shape=(64, 64, 3))
 
-    # this is the model we will train
-    model = Model(inputs=base_model.input, outputs=predictions)
+# Now let's get a tensor with the output of our vision model:
+image_input = Input(shape=(64, 64, 3))
+encoded_image = vision_model(image_input)
 
-    # first: train only the top layers (which were randomly initialized)
-    # i.e. freeze all convolutional InceptionV3 layers
-    for layer in base_model.layers:
-        layer.trainable = False
-
-    # compile the model (should be done *after* setting layers to non-trainable)
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
-
-    # train the model on the new data for a few epochs
-    model.fit_generator(...)
-
-    # at this point, the top layers are well trained and we can start fine-tuning
-    # convolutional layers from inception V3. We will freeze the bottom N layers
-    # and train the remaining top layers.
-
-    # let's visualize layer names and layer indices to see how many layers
-    # we should freeze:
-    for i, layer in enumerate(base_model.layers):
-        print(i, layer.name)
-
-    # we chose to train the top 2 inception blocks, i.e. we will freeze
-    # the first 249 layers and unfreeze the rest:
-    for layer in model.layers[:249]:
-        layer.trainable = False
-    for layer in model.layers[249:]:
-        layer.trainable = True
-
-    # we need to recompile the model for these modifications to take effect
-    # we use SGD with a low learning rate
-    from keras.optimizers import SGD
-    model.compile(optimizer=SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy')
-
-    # we train our model again (this time fine-tuning the top 2 inception blocks
-    # alongside the top Dense layers
-    model.fit_generator(...)
+# Next, let's define a language model to encode the question into a vector.
+# Each question will be at most 100 word long,
+# and we will index words as integers from 1 to 9999.
+question_input = Input(shape=(100,), dtype='int32')
+embedded_question = Embedding(input_dim=10000, output_dim=256, input_length=100)(question_input)
+drop1 = Dropout(0.3)(embedded_question)
+lstm_out = Bidirectional(LSTM(lstm_units, return_sequences=True), name='bilstm')(drop1)
+attention_mul = attention_3d_block(lstm_out)
+attention_flatten = Flatten()(attention_mul)
+drop2 = Dropout(0.3)(attention_flatten)
+encoded_question = Dense(256, activation='sigmoid')(drop2)
 
 
+# Let's concatenate the question vector and the image vector:
+merged = keras.layers.concatenate([encoded_question, encoded_image])
 
-# this could also be the output a different Keras model or layer
-input_tensor = Input(shape=(224, 224, 3))  # this assumes K.image_data_format() == 'channels_last'
+# And let's train a logistic regression over 1000 words on top:
+output = Dense(230, activation='softmax')(merged)
 
-model = InceptionV3(input_tensor=input_tensor, weights='imagenet', include_top=True)
+# This is our final model:
+vqa_model = Model(inputs=[image_input, question_input], outputs=output)
+
+# The next stage would be training this model on actual data.
+vqa_model.fit(data_generator(train_samples, 100), steps_per_epoch=1000, epochs=10,
+                    validation_data=data_generator(test_samples, 100), validation_steps=100)
