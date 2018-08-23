@@ -47,6 +47,7 @@ wtx = []
 for i in x:
     wtx.append(class_atri[y[i]])
 wtx = np.array(wtx)
+print(wtx.shape)
 
 # for img in x:
 #     # pic = Image.open(directory + img)  # .convert('L')
@@ -64,16 +65,18 @@ wtx = np.array(wtx)
 with open('imd.pickle', 'rb') as f:
     tx = pickle.load(f)
 
+input1 = Input((64, 64, 3), name='i1')
 vision_model = VGG19(include_top=False, weights=None, input_shape=(64, 64, 3))
 xm = vision_model.output
 xm = Flatten()(xm)
 xm = Dense(256, activation='relu')(xm)
-input2 = Input(wtx.shape)
-wtxl = LSTM(256)(input2)
-merged = keras.layers.concatenate([xm, xm])
-out = Dense(230,activation='softmax')(merged)
+input2 = Input(shape=wtx.shape, name='i2')
+embedded_question = Embedding(input_dim=wtx.shape[0], output_dim=256, input_length=1)(input2)
+wtxl = LSTM(256)(embedded_question)
+merged = keras.layers.concatenate([wtxl, xm])
+out = Dense(230, activation='softmax')(merged)
 
-model = Model(inputs=vision_model.input, outputs=out)
+model = Model(inputs=[vision_model.input, input2], outputs=out)
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
 y = np.array(y)
 model.fit(x=[tx, wtx], y=y, validation_split=0.2, epochs=20, batch_size=200, verbose=2)
