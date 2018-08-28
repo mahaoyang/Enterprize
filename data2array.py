@@ -17,7 +17,7 @@ def data2array(path):
     with open(path + 'DatasetA_train_20180813/class_wordembeddings.txt', 'r') as f:
         class_wordembeddings = dict()
         for i in f.readlines():
-            ii = i.strip('\n').split('\t')
+            ii = i.strip('\n').split(' ')
             class_wordembeddings[ii[0]] = ii[1:]
     print('class_wordembeddings', len(class_wordembeddings))
 
@@ -66,7 +66,7 @@ def data2array(path):
     print('train_list', len(train_list))
 
     return {'lable_list': label_list, 'train_list': train_list, 'attributes_per_class': attributes_per_class,
-            'attribute_list': attribute_list}
+            'attribute_list': attribute_list, 'class_wordembeddings': class_wordembeddings}
 
 
 if __name__ == '__main__':
