@@ -18,7 +18,7 @@ weights = 'vgg19.h5'
 path = '/Users/mahaoyang/Downloads/'
 
 
-class NN():
+class NN(object):
     def __init__(self, base_path, model_weights):
         self.base_path = base_path
         self.model_weights = model_weights
