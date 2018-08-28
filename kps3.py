@@ -146,7 +146,7 @@ def model_pw():
     model = Model(inputs=base_model.input, outputs=predictions)
     # opti = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
     opti = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-06)
-    model.compile(optimizer=opti, loss=losses.mean_absolute_percentage_error,
+    model.compile(optimizer=opti, loss=losses.mean_squared_error,
                   metrics=[metrics.mae, metrics.categorical_accuracy])
     model.summary()
     return model
