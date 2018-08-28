@@ -23,8 +23,8 @@ x = []
 y = dict()
 img_size = (200, 200)
 
-# with open('D:/lyb/DatasetA_train_20180813/label_list.txt', 'r') as f:
-with open('/Users/mahaoyang/Downloads/DatasetA_train_20180813/label_list.txt', 'r') as f:
+with open('D:/lyb/DatasetA_train_20180813/label_list.txt', 'r') as f:
+# with open('/Users/mahaoyang/Downloads/DatasetA_train_20180813/label_list.txt', 'r') as f:
     label_list = []
     for line in f:
         line = line.strip('\n').split('\t')
@@ -32,15 +32,15 @@ with open('/Users/mahaoyang/Downloads/DatasetA_train_20180813/label_list.txt', '
         print(line)
     print(len(label_list))
 
-# with open('D:/lyb/DatasetA_train_20180813/train.txt', 'r') as f:
-with open('/Users/mahaoyang/Downloads/DatasetA_train_20180813/train.txt', 'r') as f:
+with open('D:/lyb/DatasetA_train_20180813/train.txt', 'r') as f:
+# with open('/Users/mahaoyang/Downloads/DatasetA_train_20180813/train.txt', 'r') as f:
     for line in f:
         line = line.strip('\n').split('\t')
         x.append(line[0])
         y[line[0]] = line[1]
 print(len(x), len(y))
-directory = '/Users/mahaoyang/Downloads/DatasetA_train_20180813/train/'
-# directory = 'D:/lyb/DatasetA_train_20180813/train/'
+# directory = '/Users/mahaoyang/Downloads/DatasetA_train_20180813/train/'
+directory = 'D:/lyb/DatasetA_train_20180813/train/'
 # for imgname in x:  # 参数是文件夹路径 directory
 #
 #     # print(imgname)
@@ -111,11 +111,11 @@ def data_generator(data, batch_size):  # 样本生成器，节省内存
 
 
 # train the model on the new data for a few epochs
-# model.fit_generator(data_generator(train_samples, 100), steps_per_epoch=1000, epochs=10,
-#                     validation_data=data_generator(test_samples, 100), validation_steps=100)
-# model.save_weights('my_model_weights.h5')
+model.fit_generator(data_generator(train_samples, 100), steps_per_epoch=100, epochs=1000,
+                    validation_data=data_generator(test_samples, 100), validation_steps=1000)
+model.save_weights('my_model_weights.h5')
 
-model.load_weights('my_model_weights.h5', by_name=True)
+# model.load_weights('my_model_weights.h5', by_name=True)
 # 评价模型的全对率
 from tqdm import tqdm
 #
@@ -158,14 +158,16 @@ def submit_data_generator(data, path_t):
 
 
 sub_x = list()
-with open('/Users/mahaoyang/Downloads/DatasetA_test_20180813/DatasetA_test/image.txt', 'r') as f:
+# with open('/Users/mahaoyang/Downloads/DatasetA_test_20180813/DatasetA_test/image.txt', 'r') as f:
+with open('D:/lyb/DatasetA_train_20180813/DatasetA_test/image.txt', 'r') as f:
     for line in f:
         line = line.strip('\n')
         sub_x.append(line)
 sub_y = list()
 for ix in sub_x:
     for xp, yp in tqdm(
-            submit_data_generator([ix], '/Users/mahaoyang/Downloads/DatasetA_test_20180813/DatasetA_test/test/')):
+            # submit_data_generator([ix], '/Users/mahaoyang/Downloads/DatasetA_test_20180813/DatasetA_test/test/')):
+            submit_data_generator([ix], 'D:/lyb/DatasetA_train_20180813/DatasetA_test/test/')):
         ys = model.predict(xp)
         ys = np.array([i.argmax(axis=0) for i in ys]).T
 

@@ -19,6 +19,15 @@
 
 import numpy
 
+with open('D:/lyb/DatasetA_train_20180813/label_list.txt', 'r') as f:
+    # with open('/Users/mahaoyang/Downloads/DatasetA_train_20180813/label_list.txt', 'r') as f:
+    label_list = dict()
+    for line in f:
+        line = line.strip('\n').split('\t')
+        label_list[line[0]] = line[1]
+        print(line)
+    print(len(label_list))
+
 with open('D:/lyb/DatasetA_train_20180813/attributes_per_class.txt', 'r') as f:
     class_atri = dict()
     for i in f.readlines():
@@ -30,3 +39,17 @@ with open('D:/lyb/DatasetA_train_20180813/attribute_list.txt', 'r') as f:
     for i in f.readlines():
         ii = i.strip('\n').split('\t')
         atri_s[int(ii[0])] = ii[1:]
+
+with open('D:/lyb/DatasetA_train_20180813/class_wordembeddings.txt', 'r') as f:
+    c_wbd = dict()
+    for i in f.readlines():
+        ii = i.strip('\n').split(' ')
+        c_wbd[ii[0]] = ii[1:]
+    print(1)
+
+lable = dict()
+for key in label_list:
+    c_wbd[label_list[key]].extend(class_atri[key])
+    lable[key] = c_wbd[label_list[key]]
+    print(lable[key])
+print(1)
