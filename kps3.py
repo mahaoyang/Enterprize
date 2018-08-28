@@ -70,8 +70,8 @@ class SimpleNN(object):
         submit_lines = []
         for i in test_list:
             test_list[i]['label_array'] = model.predict(np.array([test_list[i]['img_array']]))
-            max_index = np.where(test_list[i]['label_array'] == np.max(test_list[i]['label_array']))
-            test_list[i]['label'] = data['label_map'][max_index[0]]
+            max_index = int(np.where(test_list[i]['label_array'] == np.max(test_list[i]['label_array']))[1][0])
+            test_list[i]['label'] = data['label_map'][max_index]
             submit_lines.append([i, test_list[i]['label']])
 
         for i in submit_lines:
@@ -130,7 +130,7 @@ class MixNN(SimpleNN):
 
 if __name__ == '__main__':
     nn = SimpleNN(base_path=path, model_weights=weights)
-    nn.train()
+    # nn.train()
     nn.submit()
     # nn = MixNN(base_path=path, model_weights=weights)
     # nn.train()
