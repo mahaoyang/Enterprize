@@ -14,8 +14,8 @@ from data2array import data2array
 img_size = (64, 64, 3)
 weights = 'vgg19.h5'
 
-# path = 'D:/lyb/'
-path = '/Users/mahaoyang/Downloads/'
+path = 'D:/lyb/'
+# path = '/Users/mahaoyang/Downloads/'
 
 
 def model_cnn():
