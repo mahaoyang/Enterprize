@@ -76,7 +76,7 @@ def data2array(path):
                 line = line.strip('\n').split('\t')
                 test_list[line[0]] = dict()
         for img in test_list:
-            pic = load_img(path + 'DatasetA_train_20180813/train/' + img, target_size=(64, 64))
+            pic = load_img(path + 'DatasetA_test_20180813/DatasetA_test/test/' + img, target_size=(64, 64))
             pic = img_to_array(pic)
             pic = pic.reshape((pic.shape[0], pic.shape[1], pic.shape[2]))
             test_list[img]['img_array'] = pic
