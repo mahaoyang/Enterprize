@@ -14,8 +14,8 @@ from data2array import data2array
 img_size = (64, 64, 3)
 weights = 'vgg19.h5'
 
-path = 'D:/lyb/'
-# path = '/Users/mahaoyang/Downloads/'
+# path = 'D:/lyb/'
+path = '/Users/mahaoyang/Downloads/'
 
 
 def model_cnn():
@@ -86,8 +86,8 @@ def model_mix():
     img_features = Flatten()(x)
 
     word_input = Input(shape=(300,), dtype='float32')
-    embeded = Embedding(input_dim=300, output_dim=230, input_length=1)(word_input)
-    embeded = Flatten()(embeded)
+    # embeded = Embedding(input_dim=300, output_dim=230, input_length=1)(word_input)
+    embeded = Flatten()(word_input)
     merged = concatenate([embeded, img_features])
 
     predictions = Dense(230, activation='softmax')(merged)
@@ -129,8 +129,8 @@ class MixNN(SimpleNN):
 
 
 if __name__ == '__main__':
-    nn = SimpleNN(base_path=path, model_weights=weights)
+    # nn = SimpleNN(base_path=path, model_weights=weights)
     # nn.train()
-    nn.submit()
-    # nn = MixNN(base_path=path, model_weights=weights)
-    # nn.train()
+    # nn.submit()
+    nn = MixNN(base_path=path, model_weights=weights)
+    nn.train()
