@@ -51,9 +51,10 @@ def data2array(path):
             train_list[img]['array'] = pic
 
         for i in train_list:
-            train_list[i]['label_real_name'] = label_list[i]
-            train_list[i]['label_real_name_class_wordembeddings'] = class_wordembeddings[label_list[i]]
-            train_list[i]['label_attribute'] = attributes_per_class[label_list[i]]
+            label = train_list[i]['lable']
+            train_list[i]['label_real_name'] = label_list[label]
+            train_list[i]['label_real_name_class_wordembeddings'] = class_wordembeddings[label_list[label]]
+            train_list[i]['label_attribute'] = attributes_per_class[label]
 
         with open('train_list.pickle', 'wb') as f:
             pickle.dump(train_list, f)
