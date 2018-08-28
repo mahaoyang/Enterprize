@@ -14,8 +14,8 @@ from data2array import data2array
 img_size = (64, 64, 3)
 weights = 'vgg19.h5'
 
-path = 'D:/lyb/'
-# path = '/Users/mahaoyang/Downloads/'
+# path = 'D:/lyb/'
+path = '/Users/mahaoyang/Downloads/'
 
 
 def model_cnn():
@@ -69,8 +69,9 @@ class SimpleNN(object):
         model.load_weights(self.model_weights)
         submit_lines = []
         for i in test_list:
-            test_list[i]['label_array'] = model.predict(np.array([test_list[i]['img_array']]))[0]
-            test_list[i]['label'] = data['label_map'][np.max(test_list[i]['label_array'])]
+            test_list[i]['label_array'] = model.predict(np.array([test_list[i]['img_array']]))
+            max_index = np.where(test_list[i]['label_array'] == np.max(test_list[i]['label_array']))
+            test_list[i]['label'] = data['label_map'][max_index[0]]
             submit_lines.append([i, test_list[i]['label']])
 
         for i in submit_lines:
