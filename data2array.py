@@ -69,8 +69,28 @@ def data2array(path):
             train_list = pickle.load(f)
     print('train_list', len(train_list))
 
-    data = {'label_list': label_list, 'train_list': train_list, 'attributes_per_class': attributes_per_class,
-            'attribute_list': attribute_list, 'class_wordembeddings': class_wordembeddings}
+    if not os.path.exists('test_list.pickle'):
+        with open(path + 'DatasetA_test_20180813/DatasetA_test/image.txt', 'r') as f:
+            test_list = dict()
+            for line in f:
+                line = line.strip('\n').split('\t')
+                test_list[line[0]] = dict()
+        for img in test_list:
+            pic = load_img(path + 'DatasetA_train_20180813/train/' + img, target_size=(64, 64))
+            pic = img_to_array(pic)
+            pic = pic.reshape((pic.shape[0], pic.shape[1], pic.shape[2]))
+            test_list[img]['img_array'] = pic
+        with open('test_list.pickle', 'wb') as f:
+            pickle.dump(test_list, f)
+    else:
+
+        with open('test_list.pickle', 'rb') as f:
+            test_list = pickle.load(f)
+    print('test_list', len(test_list))
+
+    data = {'label_list': label_list, 'label_map': label_map, 'train_list': train_list,
+            'attributes_per_class': attributes_per_class, 'attribute_list': attribute_list,
+            'class_wordembeddings': class_wordembeddings, 'test_list': test_list, }
 
     # data = pd.DataFrame(data)
 
