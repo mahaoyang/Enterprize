@@ -1,4 +1,5 @@
 from keras.preprocessing.image import load_img, img_to_array
+import pandas as pd
 import pickle
 import os
 
@@ -9,9 +10,11 @@ base_path = '/Users/mahaoyang/Downloads/'
 def data2array(path):
     with open(path + 'DatasetA_train_20180813/label_list.txt', 'r') as f:
         label_list = dict()
+        label_map = []
         for line in f:
             line = line.strip('\n').split('\t')
             label_list[line[0]] = line[1]
+            label_map.append(line[0])
     print('label_list', len(label_list))
 
     with open(path + 'DatasetA_train_20180813/class_wordembeddings.txt', 'r') as f:
@@ -42,16 +45,17 @@ def data2array(path):
             for line in f:
                 line = line.strip('\n').split('\t')
                 train_list[line[0]] = dict()
-                train_list[line[0]]['lable'] = line[1]
+                train_list[line[0]]['label'] = line[1]
+                train_list[line[0]]['label_array'] = label_map.index(line[1])
 
         for img in train_list:
             pic = load_img(path + 'DatasetA_train_20180813/train/' + img, target_size=(64, 64))
             pic = img_to_array(pic)
             pic = pic.reshape((pic.shape[0], pic.shape[1], pic.shape[2]))
-            train_list[img]['array'] = pic
+            train_list[img]['img_array'] = pic
 
         for i in train_list:
-            label = train_list[i]['lable']
+            label = train_list[i]['label']
             train_list[i]['label_real_name'] = label_list[label]
             train_list[i]['label_real_name_class_wordembeddings'] = class_wordembeddings[label_list[label]]
             train_list[i]['label_attribute'] = attributes_per_class[label]
@@ -65,8 +69,12 @@ def data2array(path):
             train_list = pickle.load(f)
     print('train_list', len(train_list))
 
-    return {'lable_list': label_list, 'train_list': train_list, 'attributes_per_class': attributes_per_class,
+    data = {'label_list': label_list, 'train_list': train_list, 'attributes_per_class': attributes_per_class,
             'attribute_list': attribute_list, 'class_wordembeddings': class_wordembeddings}
+
+    # data = pd.DataFrame(data)
+
+    return data
 
 
 if __name__ == '__main__':
