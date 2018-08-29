@@ -194,7 +194,8 @@ class PWNN(SimpleNN):
         x = np.array(x)
         y = np.array(y)
 
-        model.fit(x=x, y=y, validation_split=0.2, epochs=200, batch_size=200)
+        model.load_weights(self.model_weights)
+        model.fit(x=x[:train_num], y=y[:train_num], validation_split=0.2, epochs=2, batch_size=200)
         model.save(self.model_weights)
 
         model.evaluate(x=x[train_num:], y=y[train_num:], batch_size=200)
@@ -222,11 +223,11 @@ class PWNN(SimpleNN):
             most_like = reverse_label_list[class_wordembed_keys[i.index(min(i))]]
             submit_lines.append([test_list_name[n], most_like])
             n += 1
-        str = ''
+        submit = ''
         for i in submit_lines:
-            str += '%s\t%s\n' % (i[0], i[1])
+            submit += '%s\t%s\n' % (i[0], i[1])
         with open('submit.txt', 'w') as f:
-            f.write(str)
+            f.write(submit)
 
 
 if __name__ == '__main__':
@@ -236,5 +237,5 @@ if __name__ == '__main__':
     # nn = MixNN(base_path=path, model_weights=weights)
     # nn.train()
     nn = PWNN(base_path=path, model_weights=weights)
-    # nn.train()
-    nn.submit()
+    nn.train()
+    # nn.submit()

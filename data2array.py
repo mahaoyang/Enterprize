@@ -3,8 +3,8 @@ import pandas as pd
 import pickle
 import os
 
-# base_path = 'D:/lyb/'
-base_path = '/Users/mahaoyang/Downloads/'
+base_path = 'D:/lyb/'
+# base_path = '/Users/mahaoyang/Downloads/'
 
 
 def data2array(path):
@@ -91,7 +91,8 @@ def data2array(path):
     data = {'label_list': label_list, 'label_map': label_map, 'train_list': train_list,
             'attributes_per_class': attributes_per_class, 'attribute_list': attribute_list,
             'class_wordembeddings': class_wordembeddings, 'test_list': test_list, }
-
+    reverse_label_list = {v: k for k, v in data['label_list'].items()}
+    data['reverse_label_list'] = reverse_label_list
     # data = pd.DataFrame(data)
 
     return data
