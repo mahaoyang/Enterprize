@@ -137,7 +137,7 @@ class MixNN(SimpleNN):
 
 def model_pw():
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
-    base_model = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
+    base_model = DenseNet201(input_tensor=inputs, weights=None, include_top=False)
     # base_model2 = Xception(input_tensor=inputs, weights=None, include_top=False)
 
     x = GlobalAveragePooling2D()(base_model.output)
