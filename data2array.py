@@ -4,10 +4,12 @@ import pickle
 import os
 
 base_path = 'D:/lyb/'
+
+
 # base_path = '/Users/mahaoyang/Downloads/'
 
 
-def data2array(path):
+def data2array_b(path):
     with open(path + 'DatasetA_train_20180813/label_list.txt', 'r') as f:
         label_list = dict()
         label_map = []
@@ -88,13 +90,30 @@ def data2array(path):
             test_list = pickle.load(f)
     print('test_list', len(test_list))
 
+    test_list_name, test_list_array = [], []
+    for i in test_list:
+        test_list_name.append(i)
+        test_list_array.append(test_list[i]['img_array'])
+
     data = {'label_list': label_list, 'label_map': label_map, 'train_list': train_list,
             'attributes_per_class': attributes_per_class, 'attribute_list': attribute_list,
             'class_wordembeddings': class_wordembeddings, 'test_list': test_list, }
     reverse_label_list = {v: k for k, v in data['label_list'].items()}
     data['reverse_label_list'] = reverse_label_list
+    data['test_list_name'] = test_list_name
+    data['test_list_array'] = test_list_array
     # data = pd.DataFrame(data)
+    return data
 
+
+def data2array(path):
+    if os.path.exists('data.pickle'):
+        with open('data.pickle', 'rb') as f:
+            data = pickle.load(f)
+    else:
+        data = data2array_b(path=path)
+        with open('data.pickle', 'wb') as f:
+            pickle.dump(data, f)
     return data
 
 

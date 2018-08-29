@@ -198,21 +198,19 @@ class PWNN(SimpleNN):
         model.fit(x=x[:train_num], y=y[:train_num], validation_split=0.2, epochs=2, batch_size=200)
         model.save(self.model_weights)
 
-        model.evaluate(x=x[train_num:], y=y[train_num:], batch_size=200)
+        ev = model.evaluate(x=x[train_num:], y=y[train_num:], batch_size=200)
+        print(ev)
         return model
 
     def submit(self):
         model = self.model()
         data = data2array(self.base_path)
-        reverse_label_list = {v: k for k, v in data['label_list'].items()}
+        reverse_label_list = data['reverse_label_list']
         test_list = data['test_list']
-        test_list_array = []
-        test_list_name = []
+        test_list_array = data['test_list_array']
+        test_list_name = data['test_list_name']
         model.load_weights(self.model_weights)
         submit_lines = []
-        for i in test_list:
-            test_list_name.append(i)
-            test_list_array.append(test_list[i]['img_array'])
         test_list_label_array = model.predict(np.array(test_list_array))
         class_wordembed_keys = list(data['class_wordembeddings'].keys())
         class_wordembed_array = np.array(list(data['class_wordembeddings'].values())).astype('float32')
