@@ -1,8 +1,8 @@
 from keras.layers import Conv2D, MaxPooling2D, Flatten
-from keras.layers import Input, LSTM, Embedding, Dense, concatenate
+from keras.layers import Input, LSTM, Embedding, Dense, Concatenate
 from keras.layers import GlobalAveragePooling2D, GlobalMaxPool2D
 from keras.models import Model, Sequential
-from keras.applications import VGG16, VGG19, ResNet50, DenseNet201, DenseNet121
+from keras.applications import VGG16, VGG19, ResNet50, DenseNet201, DenseNet121, Xception
 from keras.layers import Input
 from keras.layers.normalization import BatchNormalization
 import keras
@@ -16,7 +16,8 @@ import pickle
 from data2array import data2array
 
 img_size = (64, 64, 3)
-weights = 'DenseNet121x32.h5'
+# weights = 'DenseNet121_Xception_x_32.h5'
+weights = 'DenseNet201_x_32.h5'
 
 path = 'D:/lyb/'
 
@@ -94,7 +95,7 @@ def model_mix():
     word_input = Input(shape=(300,), dtype='float32')
     # word_input = Embedding(input_dim=300, output_dim=230, input_length=1)(word_input)
     # word_input = Flatten()(word_input)
-    merged = concatenate([word_input, img_features])
+    merged = Concatenate([word_input, img_features])
 
     predictions = Dense(230, activation='softmax')(merged)
 
@@ -136,10 +137,13 @@ class MixNN(SimpleNN):
 
 def model_pw():
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
-    base_model = DenseNet201(input_tensor=inputs, weights=None, include_top=False)
-    x = base_model.output
-    x = GlobalAveragePooling2D()(x)
-    # x = BatchNormalization(epsilon=1e-6, weights=None)(x)
+    base_model = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
+    # base_model2 = Xception(input_tensor=inputs, weights=None, include_top=False)
+
+    x = GlobalAveragePooling2D()(base_model.output)
+    # x2 = GlobalAveragePooling2D()(base_model2.output)
+    # x2 = BatchNormalization(epsilon=1e-6, weights=None)(x2)
+    # x = Concatenate(axis=1)([x, x2])
     predictions = Dense(300)(x)
 
     model = Model(inputs=base_model.input, outputs=predictions)
