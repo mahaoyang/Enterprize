@@ -154,7 +154,7 @@ def model_pw():
 
 def distance(vec1, vec2):
     sub = np.square(np.array(vec1) - np.array(vec2).astype('float32'))
-    print(vec1)
+    # print(vec1)
     return np.sqrt(np.sum(sub))
 
 
@@ -176,10 +176,10 @@ class PWNN(SimpleNN):
         x = np.array(x)
         y = np.array(y)
 
-        model.fit(x=x, y=y, validation_split=0.2, epochs=500, batch_size=200)
+        model.fit(x=x, y=y, validation_split=0.2, epochs=200, batch_size=200)
         model.save(self.model_weights)
 
-        # model.evaluate(x=x[train_num:], y=y[train_num:])
+        model.evaluate(x=x[train_num:], y=y[train_num:], batch_size=200)
         return model
 
     def submit(self):
