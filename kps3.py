@@ -158,6 +158,26 @@ def distance(vec1, vec2):
     return np.sqrt(np.sum(sub))
 
 
+def euclidean_distances(A, B):
+    BT = B.transpose()
+    # vecProd = A * BT
+    vecProd = np.dot(A, BT)
+    # print(vecProd)
+    SqA = A ** 2
+    # print(SqA)
+    sumSqA = np.matrix(np.sum(SqA, axis=1))
+    sumSqAEx = np.tile(sumSqA.transpose(), (1, vecProd.shape[1]))
+    # print(sumSqAEx)
+
+    SqB = B ** 2
+    sumSqB = np.sum(SqB, axis=1)
+    sumSqBEx = np.tile(sumSqB, (vecProd.shape[0], 1))
+    SqED = sumSqBEx + sumSqAEx - 2 * vecProd
+    SqED[SqED < 0] = 0.0
+    ed = np.sqrt(SqED)
+    return ed
+
+
 class PWNN(SimpleNN):
     @staticmethod
     def model():
@@ -187,17 +207,24 @@ class PWNN(SimpleNN):
         data = data2array(self.base_path)
         reverse_label_list = {v: k for k, v in data['label_list'].items()}
         test_list = data['test_list']
+        test_list_array = []
         model.load_weights(self.model_weights)
         submit_lines = []
         for i in test_list:
-            test_list[i]['label_array'] = model.predict(np.array([test_list[i]['img_array']]))
-            distance_all = []
-            class_wordembed = list(data['class_wordembeddings'].keys())
-            for key in class_wordembed:
-                distance_all.append(distance(test_list[i]['label_array'], np.array(data['class_wordembeddings'][key])))
-            most_like = class_wordembed[distance_all.index(min(distance_all))]
-            test_list[i]['label'] = reverse_label_list[most_like]
-            submit_lines.append([i, test_list[i]['label']])
+            test_list_array.append(test_list[i]['img_array'])
+        test_list_label_array = model.predict(np.array(test_list_array))
+        class_wordembed_keys = list(data['class_wordembeddings'].keys())
+        class_wordembed_array = np.array(list(data['class_wordembeddings'].values())).astype('float32')
+        dist = euclidean_distances(test_list_label_array, class_wordembed_array)
+        distance_all = []
+        for i in dist:
+            i =list(i)
+            ii = i.index(min(i))
+        for key in class_wordembed:
+            distance_all.append(distance(test_list[i]['label_array'], np.array(data['class_wordembeddings'][key])))
+        most_like = class_wordembed[distance_all.index(min(distance_all))]
+        test_list[i]['label'] = reverse_label_list[most_like]
+        submit_lines.append([i, test_list[i]['label']])
 
         for i in submit_lines:
             with open('submit.txt', 'a') as f:
@@ -211,5 +238,5 @@ if __name__ == '__main__':
     # nn = MixNN(base_path=path, model_weights=weights)
     # nn.train()
     nn = PWNN(base_path=path, model_weights=weights)
-    nn.train()
+    # nn.train()
     nn.submit()
