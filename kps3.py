@@ -206,27 +206,27 @@ class PWNN(SimpleNN):
         reverse_label_list = {v: k for k, v in data['label_list'].items()}
         test_list = data['test_list']
         test_list_array = []
+        test_list_name = []
         model.load_weights(self.model_weights)
         submit_lines = []
         for i in test_list:
+            test_list_name.append(i)
             test_list_array.append(test_list[i]['img_array'])
         test_list_label_array = model.predict(np.array(test_list_array))
         class_wordembed_keys = list(data['class_wordembeddings'].keys())
         class_wordembed_array = np.array(list(data['class_wordembeddings'].values())).astype('float32')
         dist = euclidean_distances(test_list_label_array, class_wordembed_array)
-        distance_all = []
+        n = 0
         for i in dist:
-            i =list(i)[0]
-            ii = i.index(min(i))
-        for key in class_wordembed:
-            distance_all.append(distance(test_list[i]['label_array'], np.array(data['class_wordembeddings'][key])))
-        most_like = class_wordembed[distance_all.index(min(distance_all))]
-        test_list[i]['label'] = reverse_label_list[most_like]
-        submit_lines.append([i, test_list[i]['label']])
-
+            i = np.array(i)[0].tolist()
+            most_like = reverse_label_list[class_wordembed_keys[i.index(min(i))]]
+            submit_lines.append([test_list_name[n], most_like])
+            n += 1
+        str = ''
         for i in submit_lines:
-            with open('submit.txt', 'a') as f:
-                f.write('%s\t%s\n' % (i[0], i[1]))
+            str += '%s\t%s\n' % (i[0], i[1])
+        with open('submit.txt', 'w') as f:
+            f.write(str)
 
 
 if __name__ == '__main__':
