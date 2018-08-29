@@ -18,10 +18,10 @@ from data2array import data2array
 img_size = (64, 64, 3)
 weights = 'vgg19_pw.h5'
 
-path = 'D:/lyb/'
+# path = 'D:/lyb/'
 
 
-# path = '/Users/mahaoyang/Downloads/'
+path = '/Users/mahaoyang/Downloads/'
 
 
 def model_cnn():
@@ -218,7 +218,7 @@ class PWNN(SimpleNN):
         dist = euclidean_distances(test_list_label_array, class_wordembed_array)
         distance_all = []
         for i in dist:
-            i =list(i)
+            i =list(i)[0]
             ii = i.index(min(i))
         for key in class_wordembed:
             distance_all.append(distance(test_list[i]['label_array'], np.array(data['class_wordembeddings'][key])))
