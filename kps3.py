@@ -1,8 +1,8 @@
 from keras.layers import Conv2D, MaxPooling2D, Flatten
 from keras.layers import Input, LSTM, Embedding, Dense, concatenate
-from keras.layers import GlobalAveragePooling2D
+from keras.layers import GlobalAveragePooling2D, GlobalMaxPool2D
 from keras.models import Model, Sequential
-from keras.applications import VGG16, VGG19
+from keras.applications import VGG16, VGG19, ResNet50, DenseNet201, DenseNet121
 from keras.layers import Input
 from keras.layers.normalization import BatchNormalization
 import keras
@@ -16,9 +16,11 @@ import pickle
 from data2array import data2array
 
 img_size = (64, 64, 3)
-weights = 'vgg19_pw.h5'
+weights = 'DenseNet121x32.h5'
 
 path = 'D:/lyb/'
+
+
 # path = '/Users/mahaoyang/Downloads/'
 
 
@@ -26,7 +28,7 @@ def model_cnn():
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
     base_model = VGG19(input_tensor=inputs, weights='imagenet', include_top=False)
     x = base_model.output
-    x = GlobalAveragePooling2D()(x)
+    x = GlobalMaxPool2D()(x)
     x = Dense(512, activation='relu')(x)
     predictions = Dense(230, activation='softmax')(x)
 
@@ -134,18 +136,17 @@ class MixNN(SimpleNN):
 
 def model_pw():
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
-    base_model = VGG19(input_tensor=inputs, weights='imagenet', include_top=False)
+    base_model = DenseNet201(input_tensor=inputs, weights=None, include_top=False)
     x = base_model.output
-    x = BatchNormalization(epsilon=1e-6, weights=None)(x)
     x = GlobalAveragePooling2D()(x)
-    x = Dense(1024, activation='relu')(x)
+    # x = BatchNormalization(epsilon=1e-6, weights=None)(x)
     predictions = Dense(300)(x)
 
     model = Model(inputs=base_model.input, outputs=predictions)
-    # opti = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+    # opti = Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
     opti = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-06)
-    model.compile(optimizer=opti, loss=losses.mean_squared_error,
-                  metrics=[metrics.mae, metrics.categorical_accuracy])
+    model.compile(optimizer=opti, loss=losses.categorical_crossentropy,
+                  metrics=[metrics.categorical_accuracy])
     model.summary()
     return model
 
@@ -194,11 +195,13 @@ class PWNN(SimpleNN):
         x = np.array(x)
         y = np.array(y)
 
-        model.load_weights(self.model_weights)
-        model.fit(x=x[:train_num], y=y[:train_num], validation_split=0.2, epochs=2, batch_size=200)
+        # model.load_weights(self.model_weights)
+        model.fit(x=x[:train_num], y=y[:train_num], validation_data=[x[train_num:-200], y[train_num:-200]], epochs=40,
+                  batch_size=32)
         model.save(self.model_weights)
 
-        ev = model.evaluate(x=x[train_num:], y=y[train_num:], batch_size=200)
+        ev = model.evaluate(x=x[-200:], y=y[-200:], batch_size=200)
+        ev = dict(zip(model.metrics_names, ev))
         print(ev)
         return model
 
