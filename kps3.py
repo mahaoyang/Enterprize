@@ -16,8 +16,8 @@ import pickle
 from data2array import data2array
 
 img_size = (64, 64, 3)
-# weights = 'DenseNet121_Xception_x_32.h5'
-weights = 'DenseNet201_x_32.h5'
+weights = 'DenseNet121_Xception_x_32.h5'
+# weights = 'DenseNet201_x_32.h5'
 
 path = 'D:/lyb/'
 
@@ -138,12 +138,12 @@ class MixNN(SimpleNN):
 def model_pw():
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
     base_model = DenseNet201(input_tensor=inputs, weights=None, include_top=False)
-    # base_model2 = Xception(input_tensor=inputs, weights=None, include_top=False)
+    base_model2 = Xception(input_tensor=inputs, weights=None, include_top=False)
 
     x = GlobalAveragePooling2D()(base_model.output)
-    # x2 = GlobalAveragePooling2D()(base_model2.output)
-    # x2 = BatchNormalization(epsilon=1e-6, weights=None)(x2)
-    # x = Concatenate(axis=1)([x, x2])
+    x2 = GlobalAveragePooling2D()(base_model2.output)
+    x2 = BatchNormalization(epsilon=1e-6, weights=None)(x2)
+    x = Concatenate(axis=1)([x, x2])
     predictions = Dense(300)(x)
 
     model = Model(inputs=base_model.input, outputs=predictions)
@@ -200,8 +200,8 @@ class PWNN(SimpleNN):
         y = np.array(y)
 
         # model.load_weights(self.model_weights)
-        model.fit(x=x[:train_num], y=y[:train_num], validation_data=[x[train_num:-200], y[train_num:-200]], epochs=40,
-                  batch_size=32)
+        model.fit(x=x[:train_num], y=y[:train_num], validation_data=[x[train_num:-200], y[train_num:-200]], epochs=80,
+                  batch_size=23)
         model.save(self.model_weights)
 
         ev = model.evaluate(x=x[-200:], y=y[-200:], batch_size=200)
@@ -243,4 +243,4 @@ if __name__ == '__main__':
     # nn.train()
     nn = PWNN(base_path=path, model_weights=weights)
     nn.train()
-    # nn.submit()
+    nn.submit()
