@@ -18,7 +18,8 @@ from data2array import data2array
 img_size = (64, 64, 3)
 # weights = 'DenseNet121_Xception_x_32.h5'
 # weights = 'DenseNet201_x_32.h5'
-weights = 'DenseNet121_x_32.h5'
+# weights = 'DenseNet121_x_32.h5'
+weights = 'DenseNet121_x_32_x_3.h5'
 
 path = 'D:/lyb/'
 
@@ -136,7 +137,7 @@ class MixNN(SimpleNN):
         return model
 
 
-def model_3():
+def model_3(lr=0.00001):
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
     base_model = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
 
@@ -155,9 +156,9 @@ def model_3():
     # predictions = Dense(300)(x)
 
     model = Model(inputs=base_model.input, outputs=[x_1, x_2, x_3])
-    # opti = Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-    opti = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-20)
-    model.compile(optimizer=opti, loss=losses.categorical_crossentropy,
+    # opti = Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+    opti = RMSprop(lr=lr, rho=0.9, epsilon=1e-13)
+    model.compile(optimizer=opti, loss=losses.mean_squared_error,
                   metrics=[metrics.categorical_accuracy])
     model.summary()
     return model
@@ -191,11 +192,10 @@ def euclidean_distances(A, B):
 
 class PWNN(SimpleNN):
     @staticmethod
-    def model():
-        return model_3()
+    def model(lr=0.000001, epochs=10, batch_size=23):
+        return model_3(lr=lr)
 
-    def train(self):
-        model = self.model()
+    def train(self, lr=0.000001, epochs=10, batch_size=23):
         data = data2array(self.base_path)
         train_list = data['train_list']
         train_num = 30000
@@ -213,17 +213,20 @@ class PWNN(SimpleNN):
         y2 = np.array(y2)
         y3 = np.array(y3)
 
-        # model.load_weights(self.model_weights)
-        model.fit(x=x[:train_num], y=[y1[:train_num], y2[:train_num], y3[:train_num], ],
-                  validation_data=[x[train_num:-200], y1[train_num:-200], y2[train_num:-200], y3[train_num:-200]],
-                  epochs=10,
-                  batch_size=23)
-        model.save(self.model_weights)
-
+        model = self.model(lr=lr)
+        for i in range(0, epochs, 10):
+            print('\nround : %s\n' % i)
+            try:
+                model.load_weights(self.model_weights)
+            except Exception:
+                print('\nNot have weights yet!\n')
+            model.fit(x=x[:train_num], y=[y1[:train_num], y2[:train_num], y3[:train_num], ],
+                      validation_data=[x[train_num:-200], [y1[train_num:-200], y2[train_num:-200], y3[train_num:-200]]],
+                      epochs=10, batch_size=batch_size)
+            model.save(self.model_weights)
         ev = model.evaluate(x=x[-200:], y=[y1[-200:], y2[-200:], y3[-200:]], batch_size=200)
         ev = dict(zip(model.metrics_names, ev))
         print(ev)
-        return model
 
     def submit(self):
         data = data2array(self.base_path)
@@ -246,7 +249,7 @@ class PWNN(SimpleNN):
         with open('submit.txt', 'w') as f:
             f.write(submit)
 
-    def submit_old(self):
+    def submit_pw(self):
         model = self.model()
         data = data2array(self.base_path)
         reverse_label_list = data['reverse_label_list']
@@ -279,6 +282,6 @@ if __name__ == '__main__':
     # nn = MixNN(base_path=path, model_weights=weights)
     # nn.train()
     nn = PWNN(base_path=path, model_weights=weights)
-    nn.train()
+    nn.train(lr=0.000001, epochs=1000, batch_size=33)
     nn.submit()
     # model_3()
