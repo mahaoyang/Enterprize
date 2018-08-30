@@ -1,6 +1,6 @@
 from keras.layers import Conv2D, MaxPooling2D, Flatten
 from keras.layers import Input, LSTM, Embedding, Dense, Concatenate
-from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D
+from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, ZeroPadding2D
 from keras.models import Model, Sequential
 from keras.applications import VGG16, VGG19, ResNet50, DenseNet201, DenseNet121, Xception
 from keras.layers import Input
@@ -139,26 +139,38 @@ class MixNN(SimpleNN):
 
 def model_3(lr=0.00001):
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
-    base_model = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
 
-    xc = Conv2D(4096, 2, activation='relu')(base_model.output)
+    # base_model1 = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
+    # base_model2 = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
+    # base_model3 = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
+    # x1 = GlobalMaxPooling2D()(base_model1.output)
+    # x2 = GlobalMaxPooling2D()(base_model2.output)
+    # x3 = GlobalMaxPooling2D()(base_model3.output)
+    # x_1 = Dense(300, activation='elu')(x1)
+    # x_2 = Dense(30, activation='sigmoid')(x2)
+
+    base_model = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
+    xc = Conv2D(4096, 2, activation='relu', padding='same')(base_model.output)
     x1 = GlobalMaxPooling2D()(xc)
     x1 = BatchNormalization(epsilon=1e-6, weights=None)(x1)
     x_1 = Dense(300, activation='elu')(x1)
     x2 = GlobalMaxPooling2D()(xc)
     x2 = BatchNormalization(epsilon=1e-6, weights=None)(x2)
     x_2 = Dense(30, activation='sigmoid')(x2)
-    x3 = Dropout(0.5)(xc)
-    x3 = GlobalMaxPooling2D()(x3)
+    x3 = GlobalMaxPooling2D()(xc)
     x3 = BatchNormalization(epsilon=1e-6, weights=None)(x3)
+
+    mg = Concatenate(axis=1)([x1, x2, x3])
+    x3 = Dropout(0.5)(mg)
     x_3 = Dense(230, activation='softmax')(x3)
     # x = Concatenate(axis=1)([x, x2])
     # predictions = Dense(300)(x)
 
-    model = Model(inputs=base_model.input, outputs=[x_1, x_2, x_3])
-    # opti = Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-    opti = RMSprop(lr=lr, rho=0.9, epsilon=1e-13)
-    model.compile(optimizer=opti, loss=losses.mean_squared_error,
+    model = Model(inputs=inputs, outputs=[x_1, x_2, x_3])
+    opti = Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+    # opti = RMSprop(lr=lr, rho=0.9, epsilon=1e-13)
+    model.compile(optimizer=opti,
+                  loss=[losses.mean_squared_error, losses.categorical_crossentropy, losses.categorical_crossentropy],
                   metrics=[metrics.categorical_accuracy])
     model.summary()
     return model
