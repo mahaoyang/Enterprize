@@ -1,6 +1,6 @@
 from keras.layers import Conv2D, MaxPooling2D, Flatten
 from keras.layers import Input, LSTM, Embedding, Dense, Concatenate
-from keras.layers import GlobalAveragePooling2D, GlobalMaxPool2D
+from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D
 from keras.models import Model, Sequential
 from keras.applications import VGG16, VGG19, ResNet50, DenseNet201, DenseNet121, Xception
 from keras.layers import Input
@@ -21,6 +21,8 @@ img_size = (64, 64, 3)
 weights = 'DenseNet121_x_32.h5'
 
 path = 'D:/lyb/'
+
+
 # path = '/Users/mahaoyang/Downloads/'
 
 
@@ -28,7 +30,7 @@ def model_cnn():
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
     base_model = VGG19(input_tensor=inputs, weights='imagenet', include_top=False)
     x = base_model.output
-    x = GlobalMaxPool2D()(x)
+    x = GlobalMaxPooling2D()(x)
     x = Dense(512, activation='relu')(x)
     predictions = Dense(230, activation='softmax')(x)
 
@@ -87,7 +89,7 @@ class SimpleNN(object):
 
 def model_mix():
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
-    base_model = VGG19(input_tensor=inputs, weights='imagenet', include_top=False)
+    base_model = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
     x = base_model.output
     img_features = Flatten()(x)
 
@@ -134,18 +136,25 @@ class MixNN(SimpleNN):
         return model
 
 
-def model_pw():
+def model_3():
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
     base_model = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
-    # base_model2 = Xception(input_tensor=inputs, weights=None, include_top=False)
 
-    x = GlobalAveragePooling2D()(base_model.output)
-    # x2 = GlobalAveragePooling2D()(base_model2.output)
-    # x2 = BatchNormalization(epsilon=1e-6, weights=None)(x2)
+    xc = Conv2D(4096, 2, activation='relu')(base_model.output)
+    x1 = GlobalMaxPooling2D()(xc)
+    x1 = BatchNormalization(epsilon=1e-6, weights=None)(x1)
+    x_1 = Dense(300, activation='elu')(x1)
+    x2 = GlobalMaxPooling2D()(xc)
+    x2 = BatchNormalization(epsilon=1e-6, weights=None)(x2)
+    x_2 = Dense(30, activation='sigmoid')(x2)
+    x3 = Dropout(0.5)(xc)
+    x3 = GlobalMaxPooling2D()(x3)
+    x3 = BatchNormalization(epsilon=1e-6, weights=None)(x3)
+    x_3 = Dense(230, activation='softmax')(x3)
     # x = Concatenate(axis=1)([x, x2])
-    predictions = Dense(300)(x)
+    # predictions = Dense(300)(x)
 
-    model = Model(inputs=base_model.input, outputs=predictions)
+    model = Model(inputs=base_model.input, outputs=[x_1, x_2, x_3])
     # opti = Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
     opti = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-20)
     model.compile(optimizer=opti, loss=losses.categorical_crossentropy,
@@ -183,7 +192,7 @@ def euclidean_distances(A, B):
 class PWNN(SimpleNN):
     @staticmethod
     def model():
-        return model_pw()
+        return model_3()
 
     def train(self):
         model = self.model()
@@ -191,24 +200,53 @@ class PWNN(SimpleNN):
         train_list = data['train_list']
         train_num = 30000
         x = []
-        y = []
+        y1, y2, y3 = [], [], []
         for i in train_list:
             x.append(train_list[i]['img_array'])
-            y.append(train_list[i]['label_real_name_class_wordembeddings'])
+            y1.append(train_list[i]['label_real_name_class_wordembeddings'])
+            y2.append(train_list[i]['label_attribute'])
+            _y3 = np.zeros(230)
+            _y3[train_list[i]['label_array']] = 1
+            y3.append(_y3)
         x = np.array(x)
-        y = np.array(y)
+        y1 = np.array(y1)
+        y2 = np.array(y2)
+        y3 = np.array(y3)
 
         # model.load_weights(self.model_weights)
-        model.fit(x=x[:train_num], y=y[:train_num], validation_data=[x[train_num:-200], y[train_num:-200]], epochs=10,
+        model.fit(x=x[:train_num], y=[y1[:train_num], y2[:train_num], y3[:train_num], ],
+                  validation_data=[x[train_num:-200], y1[train_num:-200], y2[train_num:-200], y3[train_num:-200]],
+                  epochs=10,
                   batch_size=23)
         model.save(self.model_weights)
 
-        ev = model.evaluate(x=x[-200:], y=y[-200:], batch_size=200)
+        ev = model.evaluate(x=x[-200:], y=[y1[-200:], y2[-200:], y3[-200:]], batch_size=200)
         ev = dict(zip(model.metrics_names, ev))
         print(ev)
         return model
 
     def submit(self):
+        data = data2array(self.base_path)
+        test_list_array = data['test_list_array']
+        test_list_name = data['test_list_name']
+        model = self.model()
+        model.load_weights(self.model_weights)
+        _, __, predict = model.predict(np.array(test_list_array))
+        print(predict)
+        submit_lines = []
+        n = 0
+        for i in predict:
+            max_index = int(np.where(i == np.max(i))[1][0])
+            lable = data['label_map'][max_index]
+            submit_lines.append([test_list_name[n], lable])
+            n = n + 1
+        submit = ''
+        for i in submit_lines:
+            submit += '%s\t%s\n' % (i[0], i[1])
+        with open('submit.txt', 'w') as f:
+            f.write(submit)
+
+    def submit_old(self):
         model = self.model()
         data = data2array(self.base_path)
         reverse_label_list = data['reverse_label_list']
@@ -243,3 +281,4 @@ if __name__ == '__main__':
     nn = PWNN(base_path=path, model_weights=weights)
     nn.train()
     nn.submit()
+    # model_3()
