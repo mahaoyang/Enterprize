@@ -1,6 +1,6 @@
 from keras.layers import Conv2D, MaxPooling2D, Flatten
 from keras.layers import Input, LSTM, Embedding, Dense, Concatenate
-from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, ZeroPadding2D
+from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D
 from keras.models import Model, Sequential
 from keras.applications import VGG16, VGG19, ResNet50, DenseNet201, DenseNet121, Xception
 from keras.layers import Input
@@ -294,6 +294,6 @@ if __name__ == '__main__':
     # nn = MixNN(base_path=path, model_weights=weights)
     # nn.train()
     nn = PWNN(base_path=path, model_weights=weights)
-    nn.train(lr=0.000001, epochs=1000, batch_size=33)
+    nn.train(lr=0.000001, epochs=1000, batch_size=123)
     nn.submit()
     # model_3()
