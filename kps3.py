@@ -1,8 +1,8 @@
 from keras.layers import Conv2D, MaxPooling2D, Flatten
-from keras.layers import Input, LSTM, Embedding, Dense, Concatenate
+from keras.layers import Input, LSTM, Embedding, Dense, Concatenate,ZeroPadding2D
 from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D
 from keras.models import Model, Sequential
-from keras.applications import VGG16, VGG19, ResNet50, DenseNet201, DenseNet121, Xception
+from keras.applications import VGG16, VGG19, ResNet50, DenseNet201, DenseNet121, InceptionV3,Xception,InceptionResNetV2
 from keras.layers import Input
 from keras.layers.normalization import BatchNormalization
 import keras
@@ -140,25 +140,28 @@ class MixNN(SimpleNN):
 def model_3(lr=0.00001):
     inputs = Input(shape=(img_size[0], img_size[1], img_size[2]))
 
-    # base_model1 = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
-    # base_model2 = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
-    # base_model3 = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
-    # x1 = GlobalMaxPooling2D()(base_model1.output)
-    # x2 = GlobalMaxPooling2D()(base_model2.output)
-    # x3 = GlobalMaxPooling2D()(base_model3.output)
-    # x_1 = Dense(300, activation='elu')(x1)
-    # x_2 = Dense(30, activation='sigmoid')(x2)
-
-    base_model = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
-    xc = Conv2D(4096, 2, activation='relu', padding='same')(base_model.output)
-    x1 = GlobalMaxPooling2D()(xc)
-    x1 = BatchNormalization(epsilon=1e-6, weights=None)(x1)
-    x_1 = Dense(300, activation='elu')(x1)
-    x2 = GlobalMaxPooling2D()(xc)
+    inputs = ZeroPadding2D(padding=((3, 3), (3, 3)))(inputs)
+    base_model1 = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
+    base_model2 = VGG19(input_tensor=inputs, include_top=False, weights=None)
+    base_model3 = InceptionResNetV2(input_tensor=inputs, include_top=False, weights=None)
+    x1 = GlobalMaxPooling2D()(base_model1.output)
+    x2 = GlobalMaxPooling2D()(base_model2.output)
     x2 = BatchNormalization(epsilon=1e-6, weights=None)(x2)
-    x_2 = Dense(30, activation='sigmoid')(x2)
-    x3 = GlobalMaxPooling2D()(xc)
+    x3 = GlobalMaxPooling2D()(base_model3.output)
     x3 = BatchNormalization(epsilon=1e-6, weights=None)(x3)
+    x_1 = Dense(300, activation='elu')(x1)
+    x_2 = Dense(30, activation='sigmoid')(x2)
+
+    # base_model = DenseNet121(input_tensor=inputs, weights=None, include_top=False)
+    # xc = Conv2D(4096, 2, activation='relu', padding='same')(base_model.output)
+    # x1 = GlobalMaxPooling2D()(xc)
+    # x1 = BatchNormalization(epsilon=1e-6, weights=None)(x1)
+    # x_1 = Dense(300, activation='elu')(x1)
+    # x2 = GlobalMaxPooling2D()(xc)
+    # x2 = BatchNormalization(epsilon=1e-6, weights=None)(x2)
+    # x_2 = Dense(30, activation='sigmoid')(x2)
+    # x3 = GlobalMaxPooling2D()(xc)
+    # x3 = BatchNormalization(epsilon=1e-6, weights=None)(x3)
 
     mg = Concatenate(axis=1)([x1, x2, x3])
     x3 = Dropout(0.5)(mg)
@@ -294,6 +297,6 @@ if __name__ == '__main__':
     # nn = MixNN(base_path=path, model_weights=weights)
     # nn.train()
     nn = PWNN(base_path=path, model_weights=weights)
-    # nn.train(lr=0.000001, epochs=3, batch_size=123, rstep=7)
+    nn.train(lr=0.000001, epochs=3, batch_size=123, rstep=7)
     nn.submit()
     # model_3()
