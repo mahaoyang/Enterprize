@@ -247,7 +247,6 @@ class PWNN(SimpleNN):
         model = self.model()
         model.load_weights('DenseNet121_x_32_x_3.h5_rstep_7_0')
         _, __, predict = model.predict(np.array(test_list_array))
-        # print(predict)
         submit_lines = []
         n = 0
         for i in predict:
