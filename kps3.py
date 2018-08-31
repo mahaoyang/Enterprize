@@ -305,4 +305,5 @@ if __name__ == '__main__':
     nn = PWNN(base_path=path, model_weights=weights)
     model_weights = nn.train(lr=0.000001, epochs=3, batch_size=123, rstep=7, start_rstep=-1)
     nn.submit(model_weights=model_weights)
+    # nn.submit(model_weights=model_weights)
     # model_3()
