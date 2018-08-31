@@ -1,8 +1,9 @@
 from keras.layers import Conv2D, MaxPooling2D, Flatten
-from keras.layers import Input, LSTM, Embedding, Dense, Concatenate,ZeroPadding2D
+from keras.layers import Input, LSTM, Embedding, Dense, Concatenate, ZeroPadding2D
 from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D
 from keras.models import Model, Sequential
-from keras.applications import VGG16, VGG19, ResNet50, DenseNet201, DenseNet121, InceptionV3,Xception,InceptionResNetV2
+from keras.applications import VGG16, VGG19, ResNet50, DenseNet201, DenseNet121, InceptionV3, Xception, \
+    InceptionResNetV2
 from keras.layers import Input
 from keras.layers.normalization import BatchNormalization
 import keras
@@ -19,7 +20,7 @@ img_size = (64, 64, 3)
 # weights = 'DenseNet121_Xception_x_32.h5'
 # weights = 'DenseNet201_x_32.h5'
 # weights = 'DenseNet121_x_32.h5'
-weights = 'DenseNet121_x_32_x_3.h5'
+weights = 'DenseNet121_x_3'
 
 path = 'D:/lyb/'
 
@@ -210,7 +211,8 @@ class PWNN(SimpleNN):
     def model(lr=0.000001, epochs=10, batch_size=23):
         return model_3(lr=lr)
 
-    def train(self, lr=0.000001, epochs=10, batch_size=23, rstep=10):
+    def train(self, lr=0.000001, epochs=10, batch_size=23, rstep=10, start_rstep=-1):
+        start_rstep += 1
         data = data2array(self.base_path)
         train_list = data['train_list']
         train_num = 30000
@@ -229,16 +231,16 @@ class PWNN(SimpleNN):
         y3 = np.array(y3)
 
         model = self.model(lr=lr)
-        for i in range(0, rstep):
+        for i in range(start_rstep, start_rstep + rstep):
             print('\nround : %s\n' % i)
             try:
-                model.load_weights('%s_rstep_%s_%s' % (self.model_weights, rstep, (i - 1)))
+                model.load_weights('%s_rstep_%s_%s' % (self.model_weights, rstep, start_rstep - 1))
             except Exception:
                 print('\nNot have weights yet!\n')
             model.fit(x=x[:train_num], y=[y1[:train_num], y2[:train_num], y3[:train_num], ],
                       validation_data=[x[train_num:-200], [y1[train_num:-200], y2[train_num:-200], y3[train_num:-200]]],
                       epochs=epochs, batch_size=batch_size)
-            model.save('%s_rstep_%s_%s' % (self.model_weights, rstep, i))
+            model.save('%s_rstep_%s_end_%s.h5' % (self.model_weights, rstep, i))
         ev = model.evaluate(x=x[-200:], y=[y1[-200:], y2[-200:], y3[-200:]], batch_size=200)
         ev = dict(zip(model.metrics_names, ev))
         print(ev)
@@ -297,6 +299,6 @@ if __name__ == '__main__':
     # nn = MixNN(base_path=path, model_weights=weights)
     # nn.train()
     nn = PWNN(base_path=path, model_weights=weights)
-    nn.train(lr=0.000001, epochs=3, batch_size=123, rstep=7)
+    nn.train(lr=0.000001, epochs=3, batch_size=123, rstep=7, start_rstep=-1)
     nn.submit()
     # model_3()
